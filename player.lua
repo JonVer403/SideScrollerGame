@@ -1,3 +1,5 @@
+-- player.lua
+
 Player = {}
 
 function Player:load()
@@ -5,14 +7,40 @@ function Player:load()
     self.y = love.graphics.getHeight() / 2
     self.width = 200
     self.height = 100
+
+    self.dy = 0
+    self.gravity = 900
+    self.jumpPower = -700
+    self.grounded = false
 end
 
 function Player:update(dt)
-    if love.keyboard.isDown("space") then
-        self.y = self.y - 500 * dt
+    -- Gravity
+    self.dy = self.dy + self.gravity * dt
+    self.y = self.y + self.dy * dt
+
+    -- Movement
+    if love.keyboard.isDown("left") then
+        self.x = self.x - 200 * dt
     end
-    if love.keyboard.isDown("lshift") then
-        self.y = self.y + 500 * dt
+    
+    if love.keyboard.isDown("right") then
+        self.x = self.x + 200 * dt
+    end
+
+    -- Floor Collision
+    local ground = love.graphics.getHeight() - self.height
+    if self.y >= ground then
+        self.y = ground
+        self.dy = 0
+        self.grounded = true
+    end
+end
+
+function Player:jump()
+    if self.grounded then
+        self.dy = self.jumpPower
+        self.grounded = false
     end
 end
 
