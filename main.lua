@@ -16,7 +16,6 @@ local levelSchedule = {
 local scheduleIndex = 1
 local gameTime = 0
 
--- Removed 'local' here so obstacle.lua can see it
 TimeScore = 100 
 
 function love.load()
