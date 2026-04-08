@@ -23,6 +23,10 @@ function love.load()
     Sound:load()
 end
 
+if gameState == "finished" then
+    FinalScore = TimeScore
+end
+
 function love.update(dt)
     -- Level selector
     if Levels:isInSelector() then
@@ -145,7 +149,6 @@ function love.draw()
     
     -- Level complete screen
     if gameState == "finished" then
-        FinalScore = TimeScore
         drawLevelComplete()
     end
 end
