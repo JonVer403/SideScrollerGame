@@ -10,6 +10,8 @@ local obstacles = {}
 local scheduleIndex = 1
 local gameTime = 0
 local gameState = "menu" -- menu, playing, gameover, finished
+local FinalScore = 0     -- Score saved when level ends
+local scoreSubmitted = false  -- Prevent multiple leaderboard submissions
 
 TimeScore = 100 
 
@@ -23,27 +25,29 @@ function love.load()
     Sound:load()
 end
 
-if gameState == "finished" then
-    FinalScore = TimeScore
-end
-
 function love.update(dt)
-    -- Level selector
+    -- Level selector - no game updates
     if Levels:isInSelector() then
         return
     end
     
-    -- Leaderboard view
+    -- Leaderboard view - no game updates
     if Leaderboard:isShowing() then
         return
     end
     
-    -- Game over check
+    -- Game finished or game over - stop all updates
+    if gameState == "finished" or gameState == "gameover" then
+        return
+    end
+    
+    -- Game over check (ran out of time)
     if TimeScore <= 0 then
-        if gameState == "playing" then
-            gameState = "gameover"
-            -- Add score to leaderboard
-            local rank = Leaderboard:addScore(Levels.currentLevel, Leaderboard.playerName, math.max(0, TimeScore))
+        gameState = "gameover"
+        FinalScore = 0
+        if not scoreSubmitted then
+            scoreSubmitted = true
+            local rank = Leaderboard:addScore(Levels.currentLevel, Leaderboard.playerName, 0)
             if rank then
                 Sound:play("highscore")
             end
@@ -51,11 +55,18 @@ function love.update(dt)
         return
     end
     
-    gameState = "playing"
     gameTime = gameTime + dt
     
     -- Get current speed multiplier (NOS boost)
     local speedMult = NOS:getSpeedMultiplier()
+    
+    -- Update time score (countdown)
+    TimeScore = TimeScore - dt
+    
+    -- If NOS is active, timer counts down slower (advantage!)
+    if NOS.isActive then
+        TimeScore = TimeScore + dt * 0.5
+    end
 
     -- Get level schedule
     local levelSchedule = Levels:getSchedule()
@@ -80,19 +91,20 @@ function love.update(dt)
         end
     end
     
-    -- Check if level complete (all obstacles spawned and gone)
-    if scheduleIndex > #levelSchedule and #obstacles == 0 and gameState == "playing" then
+    -- Check if level complete (all obstacles spawned and cleared)
+    if scheduleIndex > #levelSchedule and #obstacles == 0 then
         gameState = "finished"
+        FinalScore = math.floor(TimeScore)  -- Save the final score
         Sound:play("finish")
-        local rank = Leaderboard:addScore(Levels.currentLevel, Leaderboard.playerName, TimeScore)
-        if rank and rank <= 3 then
-            Sound:play("highscore")
+        
+        if not scoreSubmitted then
+            scoreSubmitted = true
+            local rank = Leaderboard:addScore(Levels.currentLevel, Leaderboard.playerName, FinalScore)
+            if rank and rank <= 3 then
+                Sound:play("highscore")
+            end
         end
-    end
-    
-    -- Update time score only if not finished
-    if gameState ~= "finished" then
-        TimeScore = TimeScore - dt
+        return
     end
 
     -- Update systems
@@ -152,32 +164,57 @@ end
 
 function drawHUD()
     local screenW = love.graphics.getWidth()
+    local screenH = love.graphics.getHeight()
     
-    -- Time/Score display
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Time: " .. string.format("%.0f", math.max(0, TimeScore)), 10, 10)
+    -- Time remaining (big, important!)
+    local timeColor = {1, 1, 1}
+    if TimeScore < 10 then
+        timeColor = {1, 0.3, 0.3}  -- Red when low
+    elseif TimeScore < 20 then
+        timeColor = {1, 0.8, 0.2}  -- Yellow when getting low
+    end
     
-    -- Level name
+    love.graphics.setColor(timeColor)
+    love.graphics.print("TIME: " .. string.format("%.1f", math.max(0, TimeScore)), 10, 10)
+    
+    -- Level name and progress
+    love.graphics.setColor(0.8, 0.8, 0.8)
     love.graphics.print("Level " .. Levels.currentLevel .. ": " .. Levels:getCurrentLevel().name, screenW - 250, 10)
     
-    -- Jump charge indicator
-    if Player.jumpCharge > 0 then
-        love.graphics.setColor(1, 0.5, 0)
-        love.graphics.print("CHARGING: " .. string.format("%.0f%%", Player.jumpCharge * 100), 10, 70)
+    -- Progress bar (how far through the level)
+    local levelSchedule = Levels:getSchedule()
+    local progress = math.min(1, scheduleIndex / #levelSchedule)
+    local barWidth = 200
+    local barHeight = 8
+    local barX = screenW - barWidth - 20
+    local barY = 35
+    
+    love.graphics.setColor(0.3, 0.3, 0.3)
+    love.graphics.rectangle("fill", barX, barY, barWidth, barHeight)
+    love.graphics.setColor(0.2, 0.8, 0.2)
+    love.graphics.rectangle("fill", barX, barY, barWidth * progress, barHeight)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.rectangle("line", barX, barY, barWidth, barHeight)
+    
+    -- Jump charge indicator (above player)
+    if Player.jumpCharge > 0 and Player.isCharging then
+        love.graphics.setColor(1, 0.6, 0)
+        local chargeWidth = Player.width * Player.jumpCharge
+        love.graphics.rectangle("fill", Player.x, Player.y - 12, chargeWidth, 6)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", Player.x, Player.y - 12, Player.width, 6)
     end
     
     -- NOS active indicator
     if NOS.isActive then
         local flash = math.sin(love.timer.getTime() * 15) * 0.5 + 0.5
         love.graphics.setColor(0, flash, 1)
-        love.graphics.print(">>> NOS BOOST ACTIVE <<<", screenW/2 - 100, 10)
+        love.graphics.printf(">>> BOOST <<<", 0, 50, screenW, "center")
     end
     
-    -- Sound mute indicator
-    if Sound:isMuted() then
-        love.graphics.setColor(0.5, 0.5, 0.5)
-        love.graphics.print("[MUTED]", screenW - 80, 40)
-    end
+    -- Controls hint (bottom of screen)
+    love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
+    love.graphics.printf("SPACE: Jump | SHIFT: Boost | Avoid obstacles!", 0, screenH - 25, screenW, "center")
     
     love.graphics.setColor(1, 1, 1)
 end
@@ -186,32 +223,34 @@ function drawGameOver()
     local screenW = love.graphics.getWidth()
     local screenH = love.graphics.getHeight()
     
-    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.setColor(0, 0, 0, 0.85)
     love.graphics.rectangle("fill", 0, 0, screenW, screenH)
     
     love.graphics.setColor(1, 0.2, 0.2)
-    love.graphics.printf("GAME OVER", 0, screenH/2 - 50, screenW, "center")
+    love.graphics.printf("TIME'S UP!", 0, screenH/2 - 80, screenW, "center")
+    
+    love.graphics.setColor(0.8, 0.8, 0.8)
+    love.graphics.printf("You ran out of time!", 0, screenH/2 - 30, screenW, "center")
     
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Final Score: " .. string.format("%.0f", 0), 0, screenH/2, screenW, "center")
-    love.graphics.printf("Press R to restart | ESC for level select | L for leaderboard", 0, screenH/2 + 50, screenW, "center")
+    love.graphics.printf("Press R to retry | ESC for level select | L for leaderboard", 0, screenH/2 + 30, screenW, "center")
 end
 
 function drawLevelComplete()
     local screenW = love.graphics.getWidth()
     local screenH = love.graphics.getHeight()
     
-    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.setColor(0, 0, 0, 0.85)
     love.graphics.rectangle("fill", 0, 0, screenW, screenH)
     
     love.graphics.setColor(0.2, 1, 0.2)
-    love.graphics.printf("LEVEL COMPLETE!", 0, screenH/2 - 50, screenW, "center")
+    love.graphics.printf("FINISH!", 0, screenH/2 - 80, screenW, "center")
     
-    love.graphics.setColor(1, 0.8, 0)
-    love.graphics.printf("Score: " .. string.format("%.0f", TimeScore), 0, screenH/2, screenW, "center")
+    love.graphics.setColor(1, 0.9, 0.2)
+    love.graphics.printf("Time Remaining: " .. string.format("%.1f", FinalScore) .. "s", 0, screenH/2 - 30, screenW, "center")
     
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Press R to replay | ESC for level select | L for leaderboard", 0, screenH/2 + 50, screenW, "center")
+    love.graphics.printf("Press R to replay | ESC for level select | L for leaderboard", 0, screenH/2 + 30, screenW, "center")
 end
 
 function love.keypressed(key)
@@ -229,45 +268,51 @@ function love.keypressed(key)
         return
     end
     
-    -- Jump (release-based for jump charge)
-    if key == "space" then
-        Player:startJumpCharge()
-        Sound:play("jump")
+    -- End state (finished or gameover) - only allow menu keys
+    if gameState == "finished" or gameState == "gameover" then
+        if key == "r" then
+            startLevel()
+        elseif key == "escape" then
+            Levels:returnToSelector()
+            resetGame()
+        elseif key == "l" then
+            Leaderboard:toggle(Levels.currentLevel)
+        elseif key == "m" then
+            Sound:toggleMute()
+        end
+        return
     end
     
-    -- NOS boost activation
+    -- Gameplay inputs (only when playing)
+    if key == "space" then
+        Player:startJumpCharge()
+    end
+    
     if key == "lshift" or key == "rshift" then
         if NOS:activate() then
             Sound:play("nos_activate")
         end
     end
     
-    -- Restart level
+    -- Menu keys (always available during gameplay)
     if key == "r" then
         startLevel()
-    end
-    
-    -- Return to level selector
-    if key == "escape" then
+    elseif key == "escape" then
         Levels:returnToSelector()
         resetGame()
-    end
-    
-    -- Toggle leaderboard
-    if key == "l" then
+    elseif key == "l" then
         Leaderboard:toggle(Levels.currentLevel)
-    end
-    
-    -- Toggle mute
-    if key == "m" then
+    elseif key == "m" then
         Sound:toggleMute()
     end
 end
 
 function love.keyreleased(key)
-    -- Jump charge release
-    if key == "space" then
-        Player:releaseJumpCharge()
+    -- Only process during gameplay
+    if gameState ~= "finished" and gameState ~= "gameover" then
+        if key == "space" then
+            Player:releaseJumpCharge()
+        end
     end
 end
 
@@ -279,6 +324,7 @@ function startLevel()
     gameTime = 0
     scheduleIndex = 1
     FinalScore = 0
+    scoreSubmitted = false  -- Reset submission flag
     obstacles = {}
     TimeScore = Levels:getTimeLimit()
     NOS:reset()
@@ -289,6 +335,8 @@ end
 function resetGame()
     gameTime = 0
     scheduleIndex = 1
+    FinalScore = 0
+    scoreSubmitted = false
     obstacles = {}
     TimeScore = 100
     NOS:reset()
