@@ -56,14 +56,6 @@ function love.update(dt)
     
     -- Get current speed multiplier (NOS boost)
     local speedMult = NOS:getSpeedMultiplier()
-    
-    -- Update time score
-    TimeScore = TimeScore - dt
-    
-    -- If NOS is active, bonus points
-    if NOS.isActive then
-        TimeScore = TimeScore + dt * 0.5 -- Slow down timer during boost
-    end
 
     -- Get level schedule
     local levelSchedule = Levels:getSchedule()
@@ -96,6 +88,11 @@ function love.update(dt)
         if rank and rank <= 3 then
             Sound:play("highscore")
         end
+    end
+    
+    -- Update time score only if not finished
+    if gameState ~= "finished" then
+        TimeScore = TimeScore - dt
     end
 
     -- Update systems
