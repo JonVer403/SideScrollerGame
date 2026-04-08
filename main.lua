@@ -145,6 +145,7 @@ function love.draw()
     
     -- Level complete screen
     if gameState == "finished" then
+        FinalScore = TimeScore
         drawLevelComplete()
     end
 end
@@ -154,7 +155,7 @@ function drawHUD()
     
     -- Time/Score display
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Time: " .. string.format("%.1f", math.max(0, TimeScore)), 10, 10)
+    love.graphics.print("Time: " .. string.format("%.0f", math.max(0, TimeScore)), 10, 10)
     
     -- Level name
     love.graphics.print("Level " .. Levels.currentLevel .. ": " .. Levels:getCurrentLevel().name, screenW - 250, 10)
@@ -277,6 +278,7 @@ end
 function startLevel()
     gameTime = 0
     scheduleIndex = 1
+    FinalScore = 0
     obstacles = {}
     TimeScore = Levels:getTimeLimit()
     NOS:reset()
