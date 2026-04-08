@@ -65,12 +65,14 @@ function NOS:checkCollision(pickup)
 end
 
 function NOS:checkCollisionAnimated(pickup)
-    -- Use a slightly larger hitbox considering the bobbing
-    local hitboxY = pickup.y - 15
-    local hitboxHeight = self.pickupSize + 30
+    -- Much larger hitbox for easier collection
+    local hitboxX = pickup.x - 20
+    local hitboxY = pickup.y - 40
+    local hitboxWidth = self.pickupSize + 40
+    local hitboxHeight = self.pickupSize + 80
     
-    return pickup.x < Player.x + Player.width and
-           pickup.x + self.pickupSize > Player.x and
+    return hitboxX < Player.x + Player.width and
+           hitboxX + hitboxWidth > Player.x and
            hitboxY < Player.y + Player.height and
            hitboxY + hitboxHeight > Player.y
 end
@@ -87,8 +89,8 @@ function NOS:collect(pickup)
 end
 
 function NOS:spawnPickup(x, y, speed)
-    -- Default Y is in the air (collectible position)
-    local defaultY = love.graphics.getHeight() - 250 - math.random(0, 80)
+    -- Spawn lower so it's easier to reach
+    local defaultY = love.graphics.getHeight() - 180 - math.random(0, 60)
     local pickup = {
         x = x or love.graphics.getWidth(),
         y = y or defaultY,

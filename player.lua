@@ -4,21 +4,21 @@ Player = {}
 
 function Player:load()
     self.x = 100
-    self.y = love.graphics.getHeight() - 100 -- Start on ground
-    self.width = 80
-    self.height = 80
+    self.y = love.graphics.getHeight() - 80 -- Start on ground
+    self.width = 60
+    self.height = 60
 
     self.dy = 0
-    self.gravity = 900
-    self.jumpPower = -500          -- Base jump power
-    self.maxJumpPower = -900       -- Maximum charged jump power
+    self.gravity = 1200           -- Faster fall
+    self.jumpPower = -420          -- Lower base jump
+    self.maxJumpPower = -600       -- Lower max charged jump
     self.grounded = false
     
     -- Jump charge system
     self.jumpCharge = 0            -- 0 to 1
-    self.chargeRate = 2            -- How fast charge builds (per second)
+    self.chargeRate = 3            -- Faster charge
     self.isCharging = false
-    self.maxChargeTime = 0.5       -- Time to reach full charge
+    self.maxChargeTime = 0.4       -- Quicker to full charge
     
     -- Sprite placeholder (will be nil until actual sprites are loaded)
     self.sprite = nil

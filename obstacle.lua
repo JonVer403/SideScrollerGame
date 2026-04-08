@@ -35,9 +35,9 @@ function Obstacle:update(dt, speedMultiplier)
             self.isHit = true
             
             if self.obstacleType == "ramp" then
-                -- Ramp: launch player into the air
+                -- Ramp: moderate launch
                 print("Ramp hit - LAUNCH!")
-                Player.dy = -800  -- Strong upward boost
+                Player.dy = -550  -- Moderate upward boost
                 Player.grounded = false
                 -- Bonus points for using ramp
                 TimeScore = TimeScore + 2

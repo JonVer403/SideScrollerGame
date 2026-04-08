@@ -76,8 +76,8 @@ function love.update(dt)
         
         if gameTime >= spawnTime then
             if spawnType == "nos" then
-                -- Spawn NOS pickup in the air (away from ground obstacles)
-                local nosY = love.graphics.getHeight() - 250 - math.random(0, 100)
+                -- Spawn NOS pickup at reachable height
+                local nosY = love.graphics.getHeight() - 150 - math.random(0, 40)
                 NOS:spawnPickup(nil, nosY, Levels:getSpeed())
             else
                 -- Spawn obstacle with type
@@ -137,19 +137,19 @@ function love.draw()
     -- Draw HUD
     drawHUD()
     
-    -- Draw leaderboard if showing
-    if Leaderboard:isShowing() then
-        Leaderboard:draw(Levels.currentLevel)
-    end
-    
-    -- Game over screen
-    if gameState == "gameover" then
+    -- Game over screen (only if leaderboard not showing)
+    if gameState == "gameover" and not Leaderboard:isShowing() then
         drawGameOver()
     end
     
-    -- Level complete screen
-    if gameState == "finished" then
+    -- Level complete screen (only if leaderboard not showing)
+    if gameState == "finished" and not Leaderboard:isShowing() then
         drawLevelComplete()
+    end
+    
+    -- Draw leaderboard on top of everything
+    if Leaderboard:isShowing() then
+        Leaderboard:draw(Levels.currentLevel)
     end
 end
 
@@ -300,13 +300,13 @@ end
 
 function spawnObstacle(obstacleType)
     local speed = Levels:getSpeed() * NOS:getSpeedMultiplier()
-    local groundY = love.graphics.getHeight() - 80
+    local groundY = love.graphics.getHeight() - 60  -- Match player ground level
     
     local newObstacle = {
         x = love.graphics.getWidth(),
         y = groundY,
-        width = 80,
-        height = 80,
+        width = 50,
+        height = 50,
         isHit = false,
         speed = speed,
         obstacleType = obstacleType or "ground"
@@ -314,22 +314,22 @@ function spawnObstacle(obstacleType)
     
     -- Adjust properties based on type
     if obstacleType == "flying" then
-        -- Flying enemies float in the air
-        newObstacle.y = love.graphics.getHeight() - 300 - math.random(0, 100)
+        -- Flying enemies - lower to be reachable with jump
+        newObstacle.y = love.graphics.getHeight() - 160 - math.random(0, 40)
         newObstacle.baseY = newObstacle.y
-        newObstacle.width = 60
-        newObstacle.height = 50
-        newObstacle.floatTimer = math.random() * 6.28  -- Random start phase
+        newObstacle.width = 50
+        newObstacle.height = 40
+        newObstacle.floatTimer = math.random() * 6.28
     elseif obstacleType == "ramp" then
-        -- Ramps are on the ground, triangular
+        -- Ramps are smaller and on the ground
         newObstacle.y = groundY
-        newObstacle.width = 100
-        newObstacle.height = 60
+        newObstacle.width = 70
+        newObstacle.height = 40
     else
-        -- Ground obstacle
+        -- Ground obstacle - smaller, jumpable
         newObstacle.y = groundY
-        newObstacle.width = 70 + math.random(0, 30)
-        newObstacle.height = 60 + math.random(0, 40)
+        newObstacle.width = 40 + math.random(0, 20)
+        newObstacle.height = 40 + math.random(0, 20)
     end
     
     setmetatable(newObstacle, Obstacle)
