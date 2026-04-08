@@ -7,13 +7,23 @@ function Levels:load()
     self.currentLevel = 1
     self.inSelector = true -- Start in level selector
     
-    -- Define all levels
+    -- Define all levels with spawn patterns
+    -- Types: "ground", "flying", "ramp", "nos"
     self.data = {
         {
             name = "Easy Street",
             baseSpeed = 150,
             timeLimit = 60,
-            schedule = {2.0, 4.0, 6.0, 8.0, 10.0},
+            -- {time, type} - better spacing (minimum 1.5s between obstacles)
+            schedule = {
+                {2.0, "ground"},
+                {4.0, "ramp"},
+                {6.5, "ground"},
+                {8.5, "nos"},
+                {10.0, "flying"},
+                {12.5, "ground"},
+                {15.0, "ramp"},
+            },
             nosSpawnChance = 0.3,
             backgroundColor = {0.2, 0.3, 0.5}
         },
@@ -21,7 +31,17 @@ function Levels:load()
             name = "Highway Rush",
             baseSpeed = 200,
             timeLimit = 50,
-            schedule = {1.5, 3.0, 4.0, 5.5, 6.5, 7.5, 9.0},
+            schedule = {
+                {1.5, "ground"},
+                {3.5, "flying"},
+                {5.5, "ramp"},
+                {7.0, "nos"},
+                {9.0, "ground"},
+                {11.0, "flying"},
+                {13.0, "ground"},
+                {15.0, "ramp"},
+                {17.0, "nos"},
+            },
             nosSpawnChance = 0.25,
             backgroundColor = {0.3, 0.2, 0.4}
         },
@@ -29,7 +49,18 @@ function Levels:load()
             name = "Night Race",
             baseSpeed = 250,
             timeLimit = 45,
-            schedule = {1.2, 2.2, 3.0, 4.0, 4.8, 5.5, 6.2, 7.0, 8.0},
+            schedule = {
+                {1.5, "ground"},
+                {3.0, "flying"},
+                {4.5, "ramp"},
+                {6.0, "nos"},
+                {7.5, "flying"},
+                {9.0, "ground"},
+                {10.5, "flying"},
+                {12.0, "ramp"},
+                {14.0, "ground"},
+                {16.0, "nos"},
+            },
             nosSpawnChance = 0.2,
             backgroundColor = {0.1, 0.1, 0.2}
         },
@@ -37,7 +68,20 @@ function Levels:load()
             name = "Extreme Circuit",
             baseSpeed = 300,
             timeLimit = 40,
-            schedule = {1.0, 1.8, 2.5, 3.2, 3.8, 4.5, 5.0, 5.6, 6.2, 6.8, 7.5},
+            schedule = {
+                {1.2, "ground"},
+                {2.5, "flying"},
+                {3.8, "ramp"},
+                {5.0, "flying"},
+                {6.2, "nos"},
+                {7.5, "ground"},
+                {8.8, "flying"},
+                {10.0, "ramp"},
+                {11.2, "ground"},
+                {12.5, "flying"},
+                {13.8, "nos"},
+                {15.0, "ground"},
+            },
             nosSpawnChance = 0.35,
             backgroundColor = {0.4, 0.1, 0.1}
         }

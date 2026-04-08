@@ -40,12 +40,16 @@ function NOS:update(dt)
         local pickup = self.pickups[i]
         pickup.x = pickup.x - pickup.speed * dt
         
+        -- Bobbing animation
+        pickup.floatTimer = (pickup.floatTimer or 0) + dt * 4
+        pickup.drawY = pickup.y + math.sin(pickup.floatTimer) * 10
+        
         -- Remove if off-screen
         if pickup.x + self.pickupSize < 0 then
             table.remove(self.pickups, i)
         else
-            -- Check collision with player
-            if self:checkCollision(pickup) then
+            -- Check collision with player (use base y for collision, not animated)
+            if self:checkCollisionAnimated(pickup) then
                 self:collect(pickup)
                 table.remove(self.pickups, i)
             end
@@ -60,19 +64,36 @@ function NOS:checkCollision(pickup)
            pickup.y + self.pickupSize > Player.y
 end
 
+function NOS:checkCollisionAnimated(pickup)
+    -- Use a slightly larger hitbox considering the bobbing
+    local hitboxY = pickup.y - 15
+    local hitboxHeight = self.pickupSize + 30
+    
+    return pickup.x < Player.x + Player.width and
+           pickup.x + self.pickupSize > Player.x and
+           hitboxY < Player.y + Player.height and
+           hitboxY + hitboxHeight > Player.y
+end
+
 function NOS:collect(pickup)
     -- Add charge, cap at max
     self.charge = math.min(self.charge + self.chargePerPickup, self.maxCharge)
     
-    -- Could play sound here
+    -- Play sound
+    if Sound then
+        Sound:play("nos_pickup")
+    end
     print("NOS Collected! Charge: " .. self.charge)
 end
 
 function NOS:spawnPickup(x, y, speed)
+    -- Default Y is in the air (collectible position)
+    local defaultY = love.graphics.getHeight() - 250 - math.random(0, 80)
     local pickup = {
         x = x or love.graphics.getWidth(),
-        y = y or (love.graphics.getHeight() - 100 - self.pickupSize),
-        speed = speed or 200
+        y = y or defaultY,
+        speed = speed or 200,
+        floatTimer = math.random() * 6.28  -- For bobbing animation
     }
     table.insert(self.pickups, pickup)
 end
@@ -128,17 +149,29 @@ function NOS:draw()
     
     -- Draw pickups
     for i, pickup in ipairs(self.pickups) do
-        -- Draw NOS canister (blue with N)
-        if self.isActive then
-            love.graphics.setColor(0, 0.5, 1, 0.5 + math.sin(love.timer.getTime() * 5) * 0.5)
-        else
-            love.graphics.setColor(0, 0.7, 1)
-        end
-        love.graphics.rectangle("fill", pickup.x, pickup.y, self.pickupSize, self.pickupSize)
+        local drawY = pickup.drawY or pickup.y
         
+        -- Glow effect
+        local glowSize = 5 + math.sin((pickup.floatTimer or 0) * 2) * 3
+        love.graphics.setColor(0, 0.5, 1, 0.3)
+        love.graphics.rectangle("fill", 
+            pickup.x - glowSize, drawY - glowSize, 
+            self.pickupSize + glowSize*2, self.pickupSize + glowSize*2,
+            5, 5)
+        
+        -- Draw NOS canister (blue with N)
+        love.graphics.setColor(0, 0.8, 1)
+        love.graphics.rectangle("fill", pickup.x, drawY, self.pickupSize, self.pickupSize, 3, 3)
+        
+        -- Border
+        love.graphics.setColor(0, 0.4, 0.8)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", pickup.x, drawY, self.pickupSize, self.pickupSize, 3, 3)
+        love.graphics.setLineWidth(1)
+        
+        -- "N" label
         love.graphics.setColor(1, 1, 1)
-        love.graphics.rectangle("line", pickup.x, pickup.y, self.pickupSize, self.pickupSize)
-        love.graphics.print("N", pickup.x + 12, pickup.y + 10)
+        love.graphics.print("N", pickup.x + 14, drawY + 10)
     end
     
     love.graphics.setColor(1, 1, 1)

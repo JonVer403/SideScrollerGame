@@ -64,16 +64,24 @@ function love.update(dt)
     -- Get level schedule
     local levelSchedule = Levels:getSchedule()
     
-    -- Spawn obstacles and NOS pickups based on level schedule
-    if scheduleIndex <= #levelSchedule and gameTime >= levelSchedule[scheduleIndex] then
-        spawnObstacle()
+    -- Spawn based on level schedule (now with types)
+    if scheduleIndex <= #levelSchedule then
+        local entry = levelSchedule[scheduleIndex]
+        local spawnTime = entry[1]
+        local spawnType = entry[2]
         
-        -- Chance to spawn NOS pickup
-        if math.random() < Levels:getCurrentLevel().nosSpawnChance then
-            NOS:spawnPickup(nil, nil, Levels:getSpeed())
+        if gameTime >= spawnTime then
+            if spawnType == "nos" then
+                -- Spawn NOS pickup in the air (away from ground obstacles)
+                local nosY = love.graphics.getHeight() - 250 - math.random(0, 100)
+                NOS:spawnPickup(nil, nosY, Levels:getSpeed())
+            else
+                -- Spawn obstacle with type
+                spawnObstacle(spawnType)
+            end
+            
+            scheduleIndex = scheduleIndex + 1
         end
-        
-        scheduleIndex = scheduleIndex + 1
     end
     
     -- Check if level complete (all obstacles spawned and gone)
@@ -285,17 +293,39 @@ function resetGame()
     gameState = "menu"
 end
 
-function spawnObstacle()
+function spawnObstacle(obstacleType)
     local speed = Levels:getSpeed() * NOS:getSpeedMultiplier()
+    local groundY = love.graphics.getHeight() - 80
     
     local newObstacle = {
         x = love.graphics.getWidth(),
-        y = love.graphics.getHeight() - 100, -- Ground level
+        y = groundY,
         width = 80,
         height = 80,
         isHit = false,
-        speed = speed
+        speed = speed,
+        obstacleType = obstacleType or "ground"
     }
+    
+    -- Adjust properties based on type
+    if obstacleType == "flying" then
+        -- Flying enemies float in the air
+        newObstacle.y = love.graphics.getHeight() - 300 - math.random(0, 100)
+        newObstacle.baseY = newObstacle.y
+        newObstacle.width = 60
+        newObstacle.height = 50
+        newObstacle.floatTimer = math.random() * 6.28  -- Random start phase
+    elseif obstacleType == "ramp" then
+        -- Ramps are on the ground, triangular
+        newObstacle.y = groundY
+        newObstacle.width = 100
+        newObstacle.height = 60
+    else
+        -- Ground obstacle
+        newObstacle.y = groundY
+        newObstacle.width = 70 + math.random(0, 30)
+        newObstacle.height = 60 + math.random(0, 40)
+    end
     
     setmetatable(newObstacle, Obstacle)
     
