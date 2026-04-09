@@ -5,8 +5,16 @@ Player = {}
 function Player:load()
     self.x = 100
     self.y = love.graphics.getHeight() - 80 -- Start on ground
-    self.width = 60
-    self.height = 60
+    
+    -- Collision box dimensions (hitbox)
+    self.width = 50
+    self.height = 40
+    
+    -- Sprite offset relative to collision box (for visual alignment)
+    self.spriteOffsetX = -15  -- Sprite drawn left of hitbox
+    self.spriteOffsetY = -20  -- Sprite drawn above hitbox
+    self.spriteWidth = 80     -- Visual sprite width
+    self.spriteHeight = 80    -- Visual sprite height
 
     self.dy = 0
     self.gravity = 1200           -- Faster fall
@@ -120,34 +128,69 @@ function Player:jump()
 end
 
 function Player:draw()
+    -- Calculate sprite position with offset for proper visual alignment
+    local spriteX = self.x + self.spriteOffsetX
+    local spriteY = self.y + self.spriteOffsetY
+    
     if self.sprite then
-        -- Draw sprite
+        -- Draw sprite at offset position (aligned with collision box)
         love.graphics.setColor(1, 1, 1)
-        love.graphics.draw(self.sprite, self.x, self.y)
+        
+        -- Scale sprite to fit spriteWidth/spriteHeight
+        local imgW = self.sprite:getWidth()
+        local imgH = self.sprite:getHeight()
+        local scaleX = self.spriteWidth / imgW
+        local scaleY = self.spriteHeight / imgH
+        
+        love.graphics.draw(self.sprite, spriteX, spriteY, 0, scaleX, scaleY)
+        
+        -- Debug: draw collision box (uncomment to visualize hitbox)
+        -- love.graphics.setColor(1, 0, 0, 0.5)
+        -- love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
     else
-        -- Draw placeholder rectangle
-        -- Color based on state
+        -- Draw car-shaped placeholder instead of rectangle
+        -- Car body color based on state
         if self.isCharging then
-            -- Orange glow when charging
             local glow = 0.5 + self.jumpCharge * 0.5
             love.graphics.setColor(1, glow, 0)
         elseif not self.grounded then
-            -- Light blue when airborne
             love.graphics.setColor(0.5, 0.7, 1)
         else
-            -- White normally
-            love.graphics.setColor(1, 1, 1)
+            love.graphics.setColor(0.8, 0.2, 0.2)  -- Red car
         end
         
-        love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+        -- Draw car body (main rectangle at sprite position for visuals)
+        love.graphics.rectangle("fill", spriteX + 5, spriteY + 30, 70, 30)
+        
+        -- Car roof
+        love.graphics.rectangle("fill", spriteX + 20, spriteY + 15, 35, 20)
+        
+        -- Windows
+        love.graphics.setColor(0.6, 0.8, 1)
+        love.graphics.rectangle("fill", spriteX + 22, spriteY + 18, 14, 14)
+        love.graphics.rectangle("fill", spriteX + 38, spriteY + 18, 14, 14)
+        
+        -- Wheels
+        love.graphics.setColor(0.1, 0.1, 0.1)
+        love.graphics.circle("fill", spriteX + 20, spriteY + 60, 10)
+        love.graphics.circle("fill", spriteX + 60, spriteY + 60, 10)
+        
+        -- Wheel rims
+        love.graphics.setColor(0.7, 0.7, 0.7)
+        love.graphics.circle("fill", spriteX + 20, spriteY + 60, 4)
+        love.graphics.circle("fill", spriteX + 60, spriteY + 60, 4)
+        
+        -- Debug: draw actual collision box (uncomment to see hitbox)
+        -- love.graphics.setColor(0, 1, 0, 0.5)
+        -- love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
         
         -- Draw charge bar when charging
         if self.isCharging and self.jumpCharge > 0 then
             love.graphics.setColor(1, 0.5, 0)
-            local barWidth = self.width * self.jumpCharge
-            love.graphics.rectangle("fill", self.x, self.y - 10, barWidth, 5)
+            local barWidth = self.spriteWidth * self.jumpCharge
+            love.graphics.rectangle("fill", spriteX, spriteY - 5, barWidth, 5)
             love.graphics.setColor(1, 1, 1)
-            love.graphics.rectangle("line", self.x, self.y - 10, self.width, 5)
+            love.graphics.rectangle("line", spriteX, spriteY - 5, self.spriteWidth, 5)
         end
     end
     

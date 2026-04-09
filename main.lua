@@ -23,6 +23,7 @@ function love.load()
     Levels:load()
     Leaderboard:load()
     Sound:load()
+    Obstacle:loadSprites()  -- Load obstacle sprites once
 end
 
 function love.update(dt)
