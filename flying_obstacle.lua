@@ -35,11 +35,11 @@ end
 
 function FlyingObstacle:new(x, y, speed)
     local screenH = love.graphics.getHeight()
-    local roadHeight = 80
+    local roadHeight = 140  -- Match updated road height
     
     local obj = {
         x = x or love.graphics.getWidth(),
-        y = y or (screenH - roadHeight - 180),  -- Fly above the road
+        y = y or (screenH - roadHeight - 100),  -- Positioned to intersect jump path
         width = FlyingObstacle.DEFAULT_WIDTH,
         height = FlyingObstacle.DEFAULT_HEIGHT,
         speed = speed or 200,
@@ -47,10 +47,10 @@ function FlyingObstacle:new(x, y, speed)
         remove = false,
         obstacleType = "flying",
         
-        -- Flying behavior
+        -- Flying behavior (reduced amplitude to stay in player path)
         floatTimer = math.random() * 6.28,  -- Random start phase
-        floatAmplitude = 35,                 -- How much it bobs up/down
-        floatSpeed = 3                       -- How fast it bobs
+        floatAmplitude = 25,                 -- Reduced bob to stay threatening
+        floatSpeed = 4                       -- Slightly faster bob
     }
     
     -- Store base Y for floating movement

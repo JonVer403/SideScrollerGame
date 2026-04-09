@@ -3,21 +3,21 @@
 Player = {}
 
 function Player:load()
-    -- Road height constant
-    local roadHeight = 80
+    -- Road height constant (increased for better gameplay focus)
+    local roadHeight = 140
     
-    -- Collision box dimensions (hitbox) - larger for better gameplay
-    self.width = 60
-    self.height = 50
+    -- Collision box dimensions (hitbox) - sized proportionally to larger car
+    self.width = 90
+    self.height = 70
     
-    self.x = 100
+    self.x = 180  -- Positioned more centrally for visual focus
     self.y = love.graphics.getHeight() - roadHeight - self.height -- Start on road
     
     -- Sprite offset relative to collision box (for visual alignment)
-    self.spriteOffsetX = -20  -- Sprite drawn left of hitbox
-    self.spriteOffsetY = -30  -- Sprite drawn above hitbox
-    self.spriteWidth = 100    -- Visual sprite width (larger)
-    self.spriteHeight = 100   -- Visual sprite height (larger)
+    self.spriteOffsetX = -25  -- Sprite drawn left of hitbox
+    self.spriteOffsetY = -20  -- Sprite drawn above hitbox
+    self.spriteWidth = 140    -- Visual sprite width (much larger, proper aspect)
+    self.spriteHeight = 100   -- Visual sprite height (proper car proportions ~1.4:1)
 
     self.dy = 0
     self.gravity = 1200           -- Faster fall
@@ -81,8 +81,8 @@ function Player:update(dt, speedMultiplier)
     -- Keep player in bounds
     self.x = math.max(0, math.min(self.x, love.graphics.getWidth() - self.width))
 
-    -- Floor Collision (road is 80px tall)
-    local roadHeight = 80
+    -- Floor Collision (road is 140px tall for better gameplay focus)
+    local roadHeight = 140
     local ground = love.graphics.getHeight() - roadHeight
     if self.y + self.height >= ground then
         self.y = ground - self.height
@@ -163,26 +163,39 @@ function Player:draw()
             love.graphics.setColor(0.8, 0.2, 0.2)  -- Red car
         end
         
-        -- Draw car body (main rectangle at sprite position for visuals)
-        love.graphics.rectangle("fill", spriteX + 5, spriteY + 30, 70, 30)
+        -- Draw car body (scaled up with correct aspect ratio ~1.4:1)
+        love.graphics.rectangle("fill", spriteX + 5, spriteY + 25, 120, 45)
         
-        -- Car roof
-        love.graphics.rectangle("fill", spriteX + 20, spriteY + 15, 35, 20)
+        -- Car roof (proportionally larger)
+        love.graphics.rectangle("fill", spriteX + 30, spriteY + 8, 55, 25)
         
-        -- Windows
+        -- Windshield accent
+        love.graphics.setColor(0.3, 0.1, 0.1)
+        love.graphics.polygon("fill", 
+            spriteX + 85, spriteY + 25,
+            spriteX + 85, spriteY + 33,
+            spriteX + 120, spriteY + 33,
+            spriteX + 115, spriteY + 25)
+        
+        -- Windows (larger, clearer)
         love.graphics.setColor(0.6, 0.8, 1)
-        love.graphics.rectangle("fill", spriteX + 22, spriteY + 18, 14, 14)
-        love.graphics.rectangle("fill", spriteX + 38, spriteY + 18, 14, 14)
+        love.graphics.rectangle("fill", spriteX + 32, spriteY + 12, 22, 18)
+        love.graphics.rectangle("fill", spriteX + 58, spriteY + 12, 22, 18)
         
-        -- Wheels
+        -- Headlights
+        love.graphics.setColor(1, 1, 0.8)
+        love.graphics.rectangle("fill", spriteX + 118, spriteY + 35, 8, 12)
+        love.graphics.rectangle("fill", spriteX + 118, spriteY + 52, 8, 12)
+        
+        -- Wheels (larger, more prominent)
         love.graphics.setColor(0.1, 0.1, 0.1)
-        love.graphics.circle("fill", spriteX + 20, spriteY + 60, 10)
-        love.graphics.circle("fill", spriteX + 60, spriteY + 60, 10)
+        love.graphics.circle("fill", spriteX + 30, spriteY + 75, 16)
+        love.graphics.circle("fill", spriteX + 100, spriteY + 75, 16)
         
-        -- Wheel rims
+        -- Wheel rims (proportional)
         love.graphics.setColor(0.7, 0.7, 0.7)
-        love.graphics.circle("fill", spriteX + 20, spriteY + 60, 4)
-        love.graphics.circle("fill", spriteX + 60, spriteY + 60, 4)
+        love.graphics.circle("fill", spriteX + 30, spriteY + 75, 7)
+        love.graphics.circle("fill", spriteX + 100, spriteY + 75, 7)
         
         -- Debug: draw actual collision box (uncomment to see hitbox)
         -- love.graphics.setColor(0, 1, 0, 0.5)

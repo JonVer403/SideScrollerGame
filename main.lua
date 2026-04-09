@@ -366,13 +366,13 @@ function spawnObstacle(obstacleType)
     local speed = currentGameSpeed * NOS:getSpeedMultiplier()
     local screenW = love.graphics.getWidth()
     local screenH = love.graphics.getHeight()
-    local roadHeight = 80
+    local roadHeight = 140
     
     local newObstacle = nil
     
     if obstacleType == "flying" then
-        -- Flying obstacle with random height variation (above the road)
-        local flyY = screenH - roadHeight - 180 - math.random(0, 50)
+        -- Flying obstacle positioned in player's jump path
+        local flyY = screenH - roadHeight - 100 - math.random(0, 30)
         newObstacle = FlyingObstacle:new(screenW, flyY, speed)
         
     elseif obstacleType == "ramp" then

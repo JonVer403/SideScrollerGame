@@ -36,7 +36,7 @@ end
 function GroundObstacle:new(x, y, speed)
     local obj = {
         x = x or love.graphics.getWidth(),
-        y = y or (love.graphics.getHeight() - 80),
+        y = y or (love.graphics.getHeight() - 140),
         width = GroundObstacle.DEFAULT_WIDTH,
         height = GroundObstacle.DEFAULT_HEIGHT,
         speed = speed or 200,
@@ -45,8 +45,8 @@ function GroundObstacle:new(x, y, speed)
         obstacleType = "ground"
     }
     
-    -- Adjust Y so obstacle sits on road (road is 80px tall)
-    local roadHeight = 80
+    -- Adjust Y so obstacle sits on road (road is 140px tall)
+    local roadHeight = 140
     obj.y = love.graphics.getHeight() - roadHeight - obj.height
     
     setmetatable(obj, GroundObstacle)

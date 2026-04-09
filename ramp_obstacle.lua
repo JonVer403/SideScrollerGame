@@ -44,8 +44,8 @@ function RampObstacle:new(x, y, speed)
         obstacleType = "ramp"
     }
     
-    -- Adjust Y so ramp sits on road (road is 80px tall)
-    local roadHeight = 80
+    -- Adjust Y so ramp sits on road (road is 140px tall)
+    local roadHeight = 140
     obj.y = love.graphics.getHeight() - roadHeight - obj.height
     
     setmetatable(obj, RampObstacle)

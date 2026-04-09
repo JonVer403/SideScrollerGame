@@ -93,8 +93,8 @@ end
 
 function NOS:spawnPickup(x, y, speed)
     -- Spawn at a height where player can reach it with a jump
-    local roadHeight = 80
-    local defaultY = love.graphics.getHeight() - roadHeight - 160 - math.random(0, 50)
+    local roadHeight = 140
+    local defaultY = love.graphics.getHeight() - roadHeight - 120 - math.random(0, 40)
     local pickup = {
         x = x or love.graphics.getWidth(),
         y = y or defaultY,

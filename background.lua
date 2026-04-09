@@ -15,41 +15,41 @@ function Background:load()
     self:loadImages()
     
     -- Define parallax layers (from back to front)
-    -- Speed multipliers are relative to gameSpeed for consistent movement
+    -- Adjusted for better gameplay framing - road is dominant, sky reduced
     self.layers = {
-        -- Layer 1: Sky (very slow, barely moves)
+        -- Layer 1: Sky (reduced height - gameplay focus on road)
         {
             imageName = "sky",
             color = {0.4, 0.6, 0.9},
             y = 0,
-            height = self.screenHeight * 0.6,
+            height = self.screenHeight * 0.35,  -- Reduced from 0.6
             speedMultiplier = 0.1,  -- 10% of game speed
             x = 0
         },
-        -- Layer 2: Clouds / Mountains (slow)
+        -- Layer 2: Clouds / Mountains (higher position, smaller)
         {
             imageName = "clouds",
             color = {0.7, 0.7, 0.8},
-            y = self.screenHeight * 0.1,
-            height = self.screenHeight * 0.3,
+            y = self.screenHeight * 0.05,
+            height = self.screenHeight * 0.18,
             speedMultiplier = 0.25,  -- 25% of game speed
             x = 0
         },
-        -- Layer 3: City/Buildings (medium)
+        -- Layer 3: City/Buildings (larger, more prominent)
         {
             imageName = "city",
             color = {0.3, 0.3, 0.4},
-            y = self.screenHeight * 0.35,
-            height = self.screenHeight * 0.35,
+            y = self.screenHeight * 0.22,
+            height = self.screenHeight * 0.58,  -- Much larger buildings
             speedMultiplier = 0.5,  -- 50% of game speed
             x = 0
         },
-        -- Layer 4: Road/Ground (SAME speed as obstacles)
+        -- Layer 4: Road/Ground (expanded for gameplay focus)
         {
             imageName = "road",
-            color = {0.25, 0.25, 0.25},
-            y = self.screenHeight - 80,  -- Higher road for larger sprites
-            height = 80,
+            color = {0.2, 0.2, 0.2},
+            y = self.screenHeight - 140,  -- Larger road area
+            height = 140,
             speedMultiplier = 1.0,  -- 100% - matches obstacle speed exactly
             x = 0
         }
@@ -210,44 +210,46 @@ function Background:drawLayerDetails(layerIndex, layer)
         end
         
     elseif layerIndex == 3 then
-        -- City silhouette - draw building shapes (deterministic, no random)
-        love.graphics.setColor(0.2, 0.2, 0.25)
-        local buildingSpacing = 100
+        -- City silhouette - draw building shapes (scaled up for visual consistency)
+        love.graphics.setColor(0.2, 0.2, 0.28)
+        local buildingSpacing = 90  -- Closer together for denser skyline
         local buildingOffset = drawX % buildingSpacing
-        for i = -1, 12 do
+        for i = -1, 16 do
             local bx = buildingOffset + i * buildingSpacing
-            local bh = 40 + ((i * 17) % 60)  -- Deterministic heights
-            local bw = 30 + ((i * 11) % 40)
+            -- Taller buildings that fill more of the layer
+            local bh = 120 + ((i * 23) % 180)  -- Much taller buildings
+            local bw = 50 + ((i * 13) % 35)    -- Wider buildings
             love.graphics.rectangle("fill", bx, layer.y + layer.height - bh, bw, bh)
             
-            -- Windows (deterministic pattern)
-            love.graphics.setColor(1, 0.9, 0.5, 0.4)
-            for wy = 0, 3 do
-                for wx = 0, 2 do
+            -- Windows (more windows for taller buildings)
+            love.graphics.setColor(1, 0.9, 0.5, 0.5)
+            local windowRows = math.floor(bh / 25)
+            for wy = 0, windowRows do
+                for wx = 0, 3 do
                     -- Use deterministic "random" based on position
                     if ((i + wx + wy) % 3) ~= 0 then
-                        love.graphics.rectangle("fill", bx + 5 + wx * 10, layer.y + layer.height - bh + 8 + wy * 12, 6, 8)
+                        love.graphics.rectangle("fill", bx + 6 + wx * 11, layer.y + layer.height - bh + 10 + wy * 22, 7, 12)
                     end
                 end
             end
-            love.graphics.setColor(0.2, 0.2, 0.25)
+            love.graphics.setColor(0.2, 0.2, 0.28)
         end
         
     elseif layerIndex == 4 then
-        -- Road - draw lane markings
+        -- Road - draw lane markings (scaled for larger road)
         love.graphics.setColor(1, 1, 1, 0.9)
-        local lineSpacing = 100
+        local lineSpacing = 120
         local lineOffset = drawX % lineSpacing
         for i = -1, 15 do
             local lx = lineOffset + i * lineSpacing
-            local ly = layer.y + layer.height / 2 - 4
-            love.graphics.rectangle("fill", lx, ly, 50, 8)
+            local ly = layer.y + layer.height / 2 - 5  -- Center of road
+            love.graphics.rectangle("fill", lx, ly, 60, 10)  -- Larger dashes
         end
         
-        -- Road edges (yellow lines)
+        -- Road edges (yellow lines - thicker for visibility)
         love.graphics.setColor(1, 0.8, 0)
-        love.graphics.rectangle("fill", 0, layer.y + 2, self.screenWidth, 4)
-        love.graphics.rectangle("fill", 0, layer.y + layer.height - 6, self.screenWidth, 4)
+        love.graphics.rectangle("fill", 0, layer.y + 3, self.screenWidth, 6)
+        love.graphics.rectangle("fill", 0, layer.y + layer.height - 8, self.screenWidth, 6)
     end
 end
 
