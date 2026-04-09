@@ -3,23 +3,26 @@
 Player = {}
 
 function Player:load()
-    self.x = 100
-    self.y = love.graphics.getHeight() - 80 -- Start on ground
+    -- Road height constant
+    local roadHeight = 80
     
-    -- Collision box dimensions (hitbox)
-    self.width = 50
-    self.height = 40
+    -- Collision box dimensions (hitbox) - larger for better gameplay
+    self.width = 60
+    self.height = 50
+    
+    self.x = 100
+    self.y = love.graphics.getHeight() - roadHeight - self.height -- Start on road
     
     -- Sprite offset relative to collision box (for visual alignment)
-    self.spriteOffsetX = -15  -- Sprite drawn left of hitbox
-    self.spriteOffsetY = -20  -- Sprite drawn above hitbox
-    self.spriteWidth = 80     -- Visual sprite width
-    self.spriteHeight = 80    -- Visual sprite height
+    self.spriteOffsetX = -20  -- Sprite drawn left of hitbox
+    self.spriteOffsetY = -30  -- Sprite drawn above hitbox
+    self.spriteWidth = 100    -- Visual sprite width (larger)
+    self.spriteHeight = 100   -- Visual sprite height (larger)
 
     self.dy = 0
     self.gravity = 1200           -- Faster fall
-    self.jumpPower = -420          -- Lower base jump
-    self.maxJumpPower = -600       -- Lower max charged jump
+    self.jumpPower = -480         -- Adjusted for larger sprites
+    self.maxJumpPower = -650      -- Adjusted max charged jump
     self.grounded = false
     
     -- Jump charge system
@@ -78,10 +81,11 @@ function Player:update(dt, speedMultiplier)
     -- Keep player in bounds
     self.x = math.max(0, math.min(self.x, love.graphics.getWidth() - self.width))
 
-    -- Floor Collision
-    local ground = love.graphics.getHeight() - self.height
-    if self.y >= ground then
-        self.y = ground
+    -- Floor Collision (road is 80px tall)
+    local roadHeight = 80
+    local ground = love.graphics.getHeight() - roadHeight
+    if self.y + self.height >= ground then
+        self.y = ground - self.height
         self.dy = 0
         self.grounded = true
     end

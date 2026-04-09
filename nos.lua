@@ -18,9 +18,9 @@ function NOS:load()
     self.barX = 10
     self.barY = 40
     
-    -- Pickup settings
+    -- Pickup settings (larger for better visibility)
     self.pickups = {}
-    self.pickupSize = 40
+    self.pickupSize = 55  -- Larger pickup size
     self.chargePerPickup = 25 -- How much NOS each pickup gives
 end
 
@@ -35,10 +35,13 @@ function NOS:update(dt)
         end
     end
     
+    -- Get current speed multiplier for pickup movement
+    local speedMult = self:getSpeedMultiplier()
+    
     -- Update pickups
     for i = #self.pickups, 1, -1 do
         local pickup = self.pickups[i]
-        pickup.x = pickup.x - pickup.speed * dt
+        pickup.x = pickup.x - pickup.speed * speedMult * dt
         
         -- Bobbing animation
         pickup.floatTimer = (pickup.floatTimer or 0) + dt * 4
@@ -89,8 +92,9 @@ function NOS:collect(pickup)
 end
 
 function NOS:spawnPickup(x, y, speed)
-    -- Spawn lower so it's easier to reach
-    local defaultY = love.graphics.getHeight() - 180 - math.random(0, 60)
+    -- Spawn at a height where player can reach it with a jump
+    local roadHeight = 80
+    local defaultY = love.graphics.getHeight() - roadHeight - 160 - math.random(0, 50)
     local pickup = {
         x = x or love.graphics.getWidth(),
         y = y or defaultY,

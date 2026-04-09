@@ -1,10 +1,12 @@
 -- background.lua
--- Parallax scrolling background system with image support
+-- Parallax scrolling background system with smooth movement
 
 Background = {}
 
+-- Global game speed reference (set by main.lua based on current level)
+Background.gameSpeed = 200
+
 function Background:load()
-    self.layers = {}
     self.screenWidth = love.graphics.getWidth()
     self.screenHeight = love.graphics.getHeight()
     
@@ -13,42 +15,42 @@ function Background:load()
     self:loadImages()
     
     -- Define parallax layers (from back to front)
-    -- Each layer can have an image OR fallback to colored rectangles
+    -- Speed multipliers are relative to gameSpeed for consistent movement
     self.layers = {
-        -- Layer 1: Sky (slowest, always visible)
+        -- Layer 1: Sky (very slow, barely moves)
         {
             imageName = "sky",
-            color = {0.4, 0.6, 0.9},  -- Light blue fallback
+            color = {0.4, 0.6, 0.9},
             y = 0,
             height = self.screenHeight * 0.6,
-            speed = 20,
+            speedMultiplier = 0.1,  -- 10% of game speed
             x = 0
         },
         -- Layer 2: Clouds / Mountains (slow)
         {
             imageName = "clouds",
-            color = {0.7, 0.7, 0.8},  -- Light grey fallback
+            color = {0.7, 0.7, 0.8},
             y = self.screenHeight * 0.1,
             height = self.screenHeight * 0.3,
-            speed = 40,
+            speedMultiplier = 0.25,  -- 25% of game speed
             x = 0
         },
         -- Layer 3: City/Buildings (medium)
         {
             imageName = "city",
-            color = {0.3, 0.3, 0.4},  -- Dark grey fallback
+            color = {0.3, 0.3, 0.4},
             y = self.screenHeight * 0.35,
             height = self.screenHeight * 0.35,
-            speed = 80,
+            speedMultiplier = 0.5,  -- 50% of game speed
             x = 0
         },
-        -- Layer 4: Road/Ground (fastest, matches game speed)
+        -- Layer 4: Road/Ground (SAME speed as obstacles)
         {
             imageName = "road",
-            color = {0.25, 0.25, 0.25},  -- Asphalt grey fallback
-            y = self.screenHeight - 60,
-            height = 60,
-            speed = 200,
+            color = {0.25, 0.25, 0.25},
+            y = self.screenHeight - 80,  -- Higher road for larger sprites
+            height = 80,
+            speedMultiplier = 1.0,  -- 100% - matches obstacle speed exactly
             x = 0
         }
     }
@@ -87,8 +89,15 @@ end
 function Background:update(dt, speedMultiplier)
     speedMultiplier = speedMultiplier or 1
     
+    -- Calculate actual speed based on game speed and NOS multiplier
+    local actualGameSpeed = self.gameSpeed * speedMultiplier
+    
     for i, layer in ipairs(self.layers) do
-        layer.x = layer.x - layer.speed * speedMultiplier * dt
+        -- Calculate layer speed relative to game speed
+        local layerSpeed = actualGameSpeed * layer.speedMultiplier
+        
+        -- Update position (use precise float math for smoothness)
+        layer.x = layer.x - layerSpeed * dt
         
         -- Get the width to use for wrapping
         local wrapWidth = self.screenWidth
@@ -97,11 +106,19 @@ function Background:update(dt, speedMultiplier)
             wrapWidth = img:getWidth()
         end
         
-        -- Reset position for seamless scrolling
+        -- Seamless wrapping (use modulo for smooth looping without jumps)
         if layer.x <= -wrapWidth then
-            layer.x = layer.x + wrapWidth
+            layer.x = layer.x % wrapWidth
+            if layer.x > 0 then
+                layer.x = layer.x - wrapWidth
+            end
         end
     end
+end
+
+-- Set the base game speed (called when level starts)
+function Background:setGameSpeed(speed)
+    self.gameSpeed = speed or 200
 end
 
 function Background:draw()
@@ -117,7 +134,7 @@ function Background:draw()
         local scaledWidth = imgW * scale
         
         -- Calculate x position for seamless scroll (using first layer's x)
-        local scrollX = self.layers[1].x * 0.5  -- Slower scroll for full bg
+        local scrollX = math.floor(self.layers[1].x * 0.5)
         
         -- Draw image twice for seamless looping
         love.graphics.draw(img, scrollX, 0, 0, scale, scale)
@@ -135,6 +152,10 @@ function Background:draw()
     for i, layer in ipairs(self.layers) do
         local img = self.images[layer.imageName]
         
+        -- Use floor for pixel-perfect rendering (no sub-pixel jitter)
+        local drawX = math.floor(layer.x)
+        local drawY = math.floor(layer.y)
+        
         if img then
             -- Draw image layer
             love.graphics.setColor(1, 1, 1)
@@ -144,25 +165,26 @@ function Background:draw()
             -- Scale image to match layer height
             local scaleY = layer.height / imgH
             local scaleX = scaleY  -- Keep aspect ratio
-            local scaledWidth = imgW * scaleX
+            local scaledWidth = math.ceil(imgW * scaleX)
             
             -- Draw enough copies to cover the screen seamlessly
-            local drawX = layer.x
-            while drawX < self.screenWidth do
-                love.graphics.draw(img, drawX, layer.y, 0, scaleX, scaleY)
-                drawX = drawX + scaledWidth
+            local x = drawX
+            while x < self.screenWidth + scaledWidth do
+                love.graphics.draw(img, x, drawY, 0, scaleX, scaleY)
+                x = x + scaledWidth
             end
             -- Draw one before to handle negative x
-            love.graphics.draw(img, layer.x - scaledWidth, layer.y, 0, scaleX, scaleY)
+            love.graphics.draw(img, drawX - scaledWidth, drawY, 0, scaleX, scaleY)
         else
             -- Fallback: draw colored rectangle
             love.graphics.setColor(layer.color)
             
-            -- Draw two rectangles for seamless scrolling
-            love.graphics.rectangle("fill", layer.x, layer.y, self.screenWidth, layer.height)
-            love.graphics.rectangle("fill", layer.x + self.screenWidth, layer.y, self.screenWidth, layer.height)
+            -- Draw three rectangles for seamless scrolling (covers all edge cases)
+            love.graphics.rectangle("fill", drawX - self.screenWidth, drawY, self.screenWidth, layer.height)
+            love.graphics.rectangle("fill", drawX, drawY, self.screenWidth, layer.height)
+            love.graphics.rectangle("fill", drawX + self.screenWidth, drawY, self.screenWidth, layer.height)
             
-            -- Add some visual detail to the fallback (road lines, cloud shapes, etc.)
+            -- Add visual detail to the fallback
             self:drawLayerDetails(i, layer)
         end
     end
@@ -172,13 +194,15 @@ end
 
 function Background:drawLayerDetails(layerIndex, layer)
     -- Add visual details to fallback colored layers
+    local drawX = math.floor(layer.x)
     
     if layerIndex == 2 then
         -- Clouds - draw simple cloud shapes
         love.graphics.setColor(1, 1, 1, 0.6)
-        local cloudOffset = layer.x % 200
-        for i = 0, 5 do
-            local cx = cloudOffset + i * 200
+        local cloudSpacing = 200
+        local cloudOffset = drawX % cloudSpacing
+        for i = -1, 6 do
+            local cx = cloudOffset + i * cloudSpacing
             local cy = layer.y + 20 + math.sin(i * 1.5) * 30
             love.graphics.ellipse("fill", cx, cy, 60, 25)
             love.graphics.ellipse("fill", cx + 40, cy - 5, 40, 20)
@@ -186,19 +210,22 @@ function Background:drawLayerDetails(layerIndex, layer)
         end
         
     elseif layerIndex == 3 then
-        -- City silhouette - draw building shapes
+        -- City silhouette - draw building shapes (deterministic, no random)
         love.graphics.setColor(0.2, 0.2, 0.25)
-        local buildingOffset = layer.x % 100
-        for i = 0, 12 do
-            local bx = buildingOffset + i * 100
-            local bh = 40 + (i * 17 % 60)  -- Varying heights
-            local bw = 30 + (i * 11 % 40)
+        local buildingSpacing = 100
+        local buildingOffset = drawX % buildingSpacing
+        for i = -1, 12 do
+            local bx = buildingOffset + i * buildingSpacing
+            local bh = 40 + ((i * 17) % 60)  -- Deterministic heights
+            local bw = 30 + ((i * 11) % 40)
             love.graphics.rectangle("fill", bx, layer.y + layer.height - bh, bw, bh)
-            -- Windows
-            love.graphics.setColor(1, 0.9, 0.5, 0.3)
+            
+            -- Windows (deterministic pattern)
+            love.graphics.setColor(1, 0.9, 0.5, 0.4)
             for wy = 0, 3 do
                 for wx = 0, 2 do
-                    if math.random() > 0.3 then
+                    -- Use deterministic "random" based on position
+                    if ((i + wx + wy) % 3) ~= 0 then
                         love.graphics.rectangle("fill", bx + 5 + wx * 10, layer.y + layer.height - bh + 8 + wy * 12, 6, 8)
                     end
                 end
@@ -208,17 +235,19 @@ function Background:drawLayerDetails(layerIndex, layer)
         
     elseif layerIndex == 4 then
         -- Road - draw lane markings
-        love.graphics.setColor(1, 1, 1, 0.8)
-        local lineOffset = layer.x % 80
-        for i = 0, 15 do
-            local lx = lineOffset + i * 80
-            local ly = layer.y + layer.height / 2 - 3
-            love.graphics.rectangle("fill", lx, ly, 40, 6)
+        love.graphics.setColor(1, 1, 1, 0.9)
+        local lineSpacing = 100
+        local lineOffset = drawX % lineSpacing
+        for i = -1, 15 do
+            local lx = lineOffset + i * lineSpacing
+            local ly = layer.y + layer.height / 2 - 4
+            love.graphics.rectangle("fill", lx, ly, 50, 8)
         end
         
-        -- Road edges
+        -- Road edges (yellow lines)
         love.graphics.setColor(1, 0.8, 0)
-        love.graphics.rectangle("fill", 0, layer.y + 2, self.screenWidth, 3)
+        love.graphics.rectangle("fill", 0, layer.y + 2, self.screenWidth, 4)
+        love.graphics.rectangle("fill", 0, layer.y + layer.height - 6, self.screenWidth, 4)
     end
 end
 

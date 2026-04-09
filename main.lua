@@ -1,5 +1,7 @@
 require("player")
-require("obstacle")
+require("ground_obstacle")
+require("flying_obstacle")
+require("ramp_obstacle")
 require("background")
 require("nos")
 require("levels")
@@ -13,6 +15,9 @@ local gameState = "menu" -- menu, playing, gameover, finished
 local FinalScore = 0     -- Score saved when level ends
 local scoreSubmitted = false  -- Prevent multiple leaderboard submissions
 
+-- Current game speed (synced between road and obstacles)
+local currentGameSpeed = 200
+
 TimeScore = 100 
 
 function love.load()
@@ -23,7 +28,11 @@ function love.load()
     Levels:load()
     Leaderboard:load()
     Sound:load()
-    Obstacle:loadSprites()  -- Load obstacle sprites once
+    
+    -- Load obstacle sprites once
+    GroundObstacle:loadSprite()
+    FlyingObstacle:loadSprite()
+    RampObstacle:loadSprite()
 end
 
 function love.update(dt)
@@ -331,6 +340,10 @@ function startLevel()
     NOS:reset()
     Player:load()
     gameState = "playing"
+    
+    -- Set game speed based on level (syncs road and obstacles)
+    currentGameSpeed = Levels:getSpeed()
+    Background:setGameSpeed(currentGameSpeed)
 end
 
 function resetGame()
@@ -342,43 +355,36 @@ function resetGame()
     TimeScore = 100
     NOS:reset()
     gameState = "menu"
+    
+    -- Reset game speed to default
+    currentGameSpeed = 200
+    Background:setGameSpeed(currentGameSpeed)
 end
 
 function spawnObstacle(obstacleType)
-    local speed = Levels:getSpeed() * NOS:getSpeedMultiplier()
-    local groundY = love.graphics.getHeight() - 60  -- Match player ground level
+    -- Use current game speed (synced with background road layer)
+    local speed = currentGameSpeed * NOS:getSpeedMultiplier()
+    local screenW = love.graphics.getWidth()
+    local screenH = love.graphics.getHeight()
+    local roadHeight = 80
     
-    local newObstacle = {
-        x = love.graphics.getWidth(),
-        y = groundY,
-        width = 50,
-        height = 50,
-        isHit = false,
-        speed = speed,
-        obstacleType = obstacleType or "ground"
-    }
+    local newObstacle = nil
     
-    -- Adjust properties based on type
     if obstacleType == "flying" then
-        -- Flying enemies - lower to be reachable with jump
-        newObstacle.y = love.graphics.getHeight() - 160 - math.random(0, 40)
-        newObstacle.baseY = newObstacle.y
-        newObstacle.width = 50
-        newObstacle.height = 40
-        newObstacle.floatTimer = math.random() * 6.28
+        -- Flying obstacle with random height variation (above the road)
+        local flyY = screenH - roadHeight - 180 - math.random(0, 50)
+        newObstacle = FlyingObstacle:new(screenW, flyY, speed)
+        
     elseif obstacleType == "ramp" then
-        -- Ramps are smaller and on the ground
-        newObstacle.y = groundY
-        newObstacle.width = 70
-        newObstacle.height = 40
+        -- Ramp on the ground
+        newObstacle = RampObstacle:new(screenW, nil, speed)
+        
     else
-        -- Ground obstacle - smaller, jumpable
-        newObstacle.y = groundY
-        newObstacle.width = 40 + math.random(0, 20)
-        newObstacle.height = 40 + math.random(0, 20)
+        -- Ground obstacle (default)
+        newObstacle = GroundObstacle:new(screenW, nil, speed)
     end
     
-    setmetatable(newObstacle, Obstacle)
-    
-    table.insert(obstacles, newObstacle)
+    if newObstacle then
+        table.insert(obstacles, newObstacle)
+    end
 end
