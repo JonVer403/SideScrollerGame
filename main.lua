@@ -176,7 +176,7 @@ function drawHUD()
     end
     
     love.graphics.setColor(timeColor)
-    love.graphics.print("TIME: " .. string.format("%.1f", math.max(0, TimeScore)), 10, 10)
+    love.graphics.print("TIME: " .. string.format("%.0f", math.max(0, TimeScore)), 10, 10)
     
     -- Level name and progress
     love.graphics.setColor(0.8, 0.8, 0.8)
@@ -248,7 +248,7 @@ function drawLevelComplete()
     love.graphics.printf("FINISH!", 0, screenH/2 - 80, screenW, "center")
     
     love.graphics.setColor(1, 0.9, 0.2)
-    love.graphics.printf("Time Remaining: " .. string.format("%.1f", FinalScore) .. "s", 0, screenH/2 - 30, screenW, "center")
+    love.graphics.printf("Time Remaining: " .. string.format("%.0f", FinalScore) .. "s", 0, screenH/2 - 30, screenW, "center")
     
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("Press R to replay | ESC for level select | L for leaderboard", 0, screenH/2 + 30, screenW, "center")
