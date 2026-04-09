@@ -133,43 +133,98 @@ function love.update(dt)
 end
 
 function love.draw()
-    -- Level selector screen
+    -- ============================================
+    -- LÖVE2D RENDERING BEST PRACTICES
+    -- ============================================
+    -- 1. Clear screen at start of each frame
+    -- 2. Reset transforms before drawing
+    -- 3. Use push/pop for isolated transforms
+    -- 4. Draw in correct order: BG → World → Player → Obstacles → UI
+    -- 5. Reset color to white after each section
+    -- ============================================
+    
+    -- Clear the screen (prevents ghosting/artifacts)
+    love.graphics.clear(0.1, 0.1, 0.15, 1)
+    
+    -- Reset all transforms to default state
+    love.graphics.origin()
+    love.graphics.setColor(1, 1, 1, 1)
+    
+    -- Level selector screen (isolated)
     if Levels:isInSelector() then
+        love.graphics.push()
         Levels:drawSelector()
+        love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 1)
         return
     end
     
-    -- Draw background first
+    -- ========== LAYER 1: BACKGROUND ==========
+    love.graphics.push()
     Background:draw()
+    love.graphics.pop()
+    love.graphics.setColor(1, 1, 1, 1)
     
-    -- Draw player
+    -- ========== LAYER 2: GAME WORLD ==========
+    -- Player
+    love.graphics.push()
     Player:draw()
+    love.graphics.pop()
+    love.graphics.setColor(1, 1, 1, 1)
 
-    -- Draw obstacles
+    -- Obstacles (draw in spawn order for correct layering)
     for i, obs in ipairs(obstacles) do
+        love.graphics.push()
         obs:draw()
+        love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 1)
     end
     
-    -- Draw NOS pickups and meter
-    NOS:draw()
+    -- NOS pickups (world layer)
+    love.graphics.push()
+    NOS:drawPickups()
+    love.graphics.pop()
+    love.graphics.setColor(1, 1, 1, 1)
     
-    -- Draw HUD
+    -- ========== LAYER 3: UI / HUD ==========
+    love.graphics.push()
+    NOS:drawMeter()
+    love.graphics.pop()
+    love.graphics.setColor(1, 1, 1, 1)
+    
+    love.graphics.push()
     drawHUD()
+    love.graphics.pop()
+    love.graphics.setColor(1, 1, 1, 1)
     
+    -- ========== LAYER 4: OVERLAYS ==========
     -- Game over screen (only if leaderboard not showing)
     if gameState == "gameover" and not Leaderboard:isShowing() then
+        love.graphics.push()
         drawGameOver()
+        love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 1)
     end
     
     -- Level complete screen (only if leaderboard not showing)
     if gameState == "finished" and not Leaderboard:isShowing() then
+        love.graphics.push()
         drawLevelComplete()
+        love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 1)
     end
     
-    -- Draw leaderboard on top of everything
+    -- Leaderboard on top of everything
     if Leaderboard:isShowing() then
+        love.graphics.push()
         Leaderboard:draw(Levels.currentLevel)
+        love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 1)
     end
+    
+    -- Final reset (safety)
+    love.graphics.origin()
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 function drawHUD()

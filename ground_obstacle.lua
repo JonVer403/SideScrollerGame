@@ -105,6 +105,9 @@ function GroundObstacle:draw()
 end
 
 function GroundObstacle:drawFallback()
+    -- Save state for proper reset
+    local prevLineWidth = love.graphics.getLineWidth()
+    
     -- Traffic cone / barrier style
     if self.isHit then
         love.graphics.setColor(1, 0.3, 0.3)
@@ -154,5 +157,8 @@ function GroundObstacle:drawFallback()
         topX + topWidth, self.y,
         topX, self.y
     )
-    love.graphics.setLineWidth(1)
+    
+    -- Reset graphics state
+    love.graphics.setLineWidth(prevLineWidth)
+    love.graphics.setColor(1, 1, 1, 1)
 end

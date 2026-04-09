@@ -116,6 +116,9 @@ function FlyingObstacle:draw()
 end
 
 function FlyingObstacle:drawFallback()
+    -- Save state for proper reset
+    local prevLineWidth = love.graphics.getLineWidth()
+    
     local cx = self.x + self.width / 2
     local cy = self.y + self.height / 2
     
@@ -176,4 +179,8 @@ function FlyingObstacle:drawFallback()
         cx + self.width * 0.55, cy + 2,
         cx + self.width * 0.4, cy + 6
     )
+    
+    -- Reset graphics state
+    love.graphics.setLineWidth(prevLineWidth)
+    love.graphics.setColor(1, 1, 1, 1)
 end

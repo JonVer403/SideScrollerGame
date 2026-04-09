@@ -128,7 +128,13 @@ function NOS:getSpeedMultiplier()
     return 1
 end
 
-function NOS:draw()
+-- Split draw into two functions for proper layer separation
+-- Meter = UI layer, Pickups = World layer
+
+function NOS:drawMeter()
+    -- Save current line width
+    local prevLineWidth = love.graphics.getLineWidth()
+    
     -- Draw NOS meter background
     love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("fill", self.barX, self.barY, self.barWidth, self.barHeight)
@@ -153,7 +159,16 @@ function NOS:draw()
     -- Draw NOS label
     love.graphics.print("NOS", self.barX + self.barWidth + 10, self.barY + 2)
     
-    -- Draw pickups
+    -- Reset state
+    love.graphics.setLineWidth(prevLineWidth)
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
+function NOS:drawPickups()
+    -- Save current line width
+    local prevLineWidth = love.graphics.getLineWidth()
+    
+    -- Draw pickups (world layer - drawn with game objects)
     for i, pickup in ipairs(self.pickups) do
         local drawY = pickup.drawY or pickup.y
         
@@ -173,14 +188,21 @@ function NOS:draw()
         love.graphics.setColor(0, 0.4, 0.8)
         love.graphics.setLineWidth(2)
         love.graphics.rectangle("line", pickup.x, drawY, self.pickupSize, self.pickupSize, 3, 3)
-        love.graphics.setLineWidth(1)
         
         -- "N" label
         love.graphics.setColor(1, 1, 1)
         love.graphics.print("N", pickup.x + 14, drawY + 10)
     end
     
-    love.graphics.setColor(1, 1, 1)
+    -- Reset state
+    love.graphics.setLineWidth(prevLineWidth)
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
+-- Legacy function for backwards compatibility
+function NOS:draw()
+    self:drawPickups()
+    self:drawMeter()
 end
 
 function NOS:reset()

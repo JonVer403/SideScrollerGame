@@ -111,6 +111,9 @@ function RampObstacle:draw()
 end
 
 function RampObstacle:drawFallback()
+    -- Save state for proper reset
+    local prevLineWidth = love.graphics.getLineWidth()
+    
     -- Main ramp color (yellow/gold)
     if self.isHit then
         love.graphics.setColor(0.6, 0.6, 0.3)
@@ -175,4 +178,8 @@ function RampObstacle:drawFallback()
             arrowX, arrowY + 5
         )
     end
+    
+    -- Reset graphics state
+    love.graphics.setLineWidth(prevLineWidth)
+    love.graphics.setColor(1, 1, 1, 1)
 end
